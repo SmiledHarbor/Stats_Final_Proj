@@ -231,18 +231,4 @@ def driver():
 
     #End
     print(f"Number of times H0 was rejected: {num_reject}\nNumber of times H0 was accepted: {num_fail}\nNum of exep: {num_with_exeption}")
-
-    #There is always an exeption in the Expected Values being less than 5,
-    #gotta check that out and find out how to fix it
-    #Probably just adding more to the sample size
-    #Ight got it
-    #But still never rejected the H0 once <-- Duh, the sames came from the same text. Ofc they share letter frequencies
-    # ^No I was right, it was just taking the same sample many times
-    #
-    #H0: There is no difference in letter frequency between the two samples
-    #HA: There is a difference in the frequency between the two samples
-    #
-    #Use seaborn to make plots of the results (SNS)
-    #https://stackoverflow.com/questions/44552489/plotting-multiple-boxplots-in-seaborn
-#make_blox_plot([[12,23,45,25,64,25,85,23,57],[23,76,34,77,43,67,53,78,53]], True, False)
 driver()
