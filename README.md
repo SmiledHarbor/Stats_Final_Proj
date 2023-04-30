@@ -10,7 +10,7 @@
 #### Returns
 >Sanitized <code>String</code>
 #### Process
-> -Iterate over input string and apply regex pattern to each letter
+> - Iterate over input string and apply regex pattern to each letter
 
 ---
 
