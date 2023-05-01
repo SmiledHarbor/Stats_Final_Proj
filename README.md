@@ -6,7 +6,7 @@
 
 ## Make Alpha
 #### Accepts
->Non-nested <code>text</code>
+>Non-nested <code>List</code>
 #### Returns
 >Sanitized <code>String</code>
 #### Process
@@ -16,7 +16,7 @@
 
 ## File Reader
 #### Accepts
-> - file_name = "stats_proj_base.txt"
+> - file_name = "book1.txt"
 > - sample_size = 30
 > - append_to_file = False
 > - thread_id = None
@@ -25,7 +25,7 @@
 > - Counts: Number of each letter in the selected sample
 > - SSOW: Literal <code> List </code> of the words
 #### Process
-> - Open the file <code>file_name</code> and get random indice __i__ to __i + 1__
+> - Open the file <code>file_name</code> and get random indice _i_ to _i + sameple size_
 > - Combine the output of above
 > - Sanitize with <code>make_alpha</code> 
 > - Calculate letter frequencies
