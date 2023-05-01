@@ -7,6 +7,8 @@ from scipy.stats import chi2_contingency
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import statistics
+from math import sqrt
 
 #A "Simple" script to calculate the Chi-square test statistic between the letter
 #frequencies in modern English vs. old English.
@@ -124,7 +126,7 @@ def chi_square_for_independence(old_obj: dict, modern_obj: dict):
         if two_d_array[0][x] == 0 and two_d_array[1][x] == 0:
             double_zeros[x] = WOW_ITS_THE_ALPHABET[x]
             pos_to_remove.append(x)
-    for x in range(0, len(pos_to_remove)):
+    for x in range(0, len(pos_to_remove) -1):
         del two_d_array[0][pos_to_remove[x]]
         del two_d_array[1][pos_to_remove[x]]
 
@@ -186,14 +188,15 @@ def reformat_dump(num: int):
 
 #Make an SNS double boxplot of the data
 #with the option to either save the fig or display
+#left in for legacy reasons
 def make_blox_plot(list: list, show= False, download= False, path_to_save_to:str =  "", id =""):
     if show == False and download == False:
         #Dont waste time generating a graph that is not used
         pass
     else: 
         data = {
-            "List 1": list[0],
-            "List 2": list[1]
+            "Shakespeare": list[0],
+            "Modern": list[1]
         }
         df = pd.DataFrame(data)
         sns.boxplot(data=df)
@@ -205,6 +208,86 @@ def make_blox_plot(list: list, show= False, download= False, path_to_save_to:str
             else: 
                 plt.savefig(f"{path_to_save_to}/Trial_{id}.png")
 
+#Make Barplot (more useful)
+def make_bar_plot(inp_list: list, path_to_save_to: str, name: str):
+    print(list)
+    inp_list = [sorted(dict(inp_list[0]).items()), sorted(dict(inp_list[1]).items())]
+    list_1_keys = list(dict(inp_list[0]).keys())
+    list_2_keys = list(dict(inp_list[1]).keys())
+    list_1_vals = list(dict(inp_list[0]).values())
+    list_2_vals = list(dict(inp_list[1]).values())
+    fig, axs = plt.subplots(1, 2)
+    axs[0].legend(title="Shakespeare")
+    axs[1].legend(title="Modern")
+    sns.barplot(x= list_1_keys, y= list_1_vals, ax=axs[0])
+    sns.barplot(x= list_2_keys, y= list_2_vals, ax=axs[1])
+    fig.tight_layout()
+    fig.savefig(f"{path_to_save_to}/{name}")
+
+def confidence_interval(two_way_table: list, z_score: int = 1.645):
+    condence_array = []
+    for x in range(0, len(two_way_table[0])):
+        condence_array.append(two_way_table[0][x])
+        condence_array.append(two_way_table[1][x])
+    mean = (sum(two_way_table[0]) / len(two_way_table[0])) + (sum(two_way_table[1]) / len(two_way_table[1]))
+    sd = statistics.stdev(condence_array)
+    lower_bound = mean - (z_score * (sd / sqrt(len(two_way_table[0]) * 2)))
+    upper_bound = mean + (z_score * (sd / sqrt(len(two_way_table[0]) * 2)))
+    return [lower_bound, upper_bound]
+
+def updated_driver(sample_size, graph_name, redirect_output):
+    reject = False
+    
+    #book1.txt --> Shakespeare
+    #book2.txt --> Modern
+
+    #Get the dictionary counts as counter objs
+    counts_1 = file_reader("book1.txt", sample_size)["Counts"]
+    counts_2 = file_reader("book2.txt", sample_size)["Counts"]
+
+    #Fashion them into just the frequency lists
+    counts_1_item = list(dict(counts_1).values())
+    counts_2_item = list(dict(counts_2).values())
+
+    #Form a Confidence Interval
+    #Ask for help interpriting cause I have no idea what I just found
+    conf_int = confidence_interval([counts_1_item, counts_2_item])
+
+    #Voodoo magic
+    curent_output = chi_square_for_independence(dict(counts_1), dict(counts_2))
+
+    #Interprit the voodoo signs to tell the future
+    if curent_output == "Invalid":
+        print("Invalid")
+    elif len(curent_output["exepts"]) == 0:
+        if curent_output["chi_square"] < .05:
+            #Reject the H0
+            print(f"Reject the Null Hyp.\nTest Stat: {curent_output['chi_square']}\nConfidence Interval: {conf_int}")
+            reject = True
+        else:
+            #F2R the H0
+            print(f"Fail to reject the Null Hpt.\nTest Stat: {curent_output['chi_square']}\nConfidence Interval: {conf_int}")
+    else:
+        print("Failure of expected counts")
+
+    #Output the raw data
+    with open(redirect_output, "w") as file:
+        json.dump({"freq": [dict(counts_1),
+                            dict(counts_2)],
+                            "test_stat": curent_output["chi_square"],
+                            "dof": curent_output["dof"],
+                            "conf_int":conf_int,
+                            "reject": reject},
+                            file, indent=4)
+
+    #Print the commemritive photo of the voodoo magic
+    #make_blox_plot([counts_1_item, counts_2_item], False, True, "Saves", graph_name)
+    make_bar_plot([dict(counts_1), dict(counts_2)], "Saves", "VoodooPic.png")
+
+#Run the new driver
+updated_driver(3000, "VoodooPic", "summary.json")
+
+#Depreciated
 def driver():
     num_reject = 0
     num_fail = 0
@@ -214,21 +297,24 @@ def driver():
     #Dump_1 will be the old english
     #Dump_2 the modern
 
-    for x in range(0, 10000):
+    #Run the sample one time
+    for x in range(0, 1):
         #Generate the frequencies in pairs for even data
         counts_1 = file_reader("out.txt", 3000)["Counts"]
         counts_2 = file_reader("book2.txt", 3000)["Counts"]
 
         #Do the calculations and interprit the results
         curent_output = chi_square_for_independence(dict(counts_1), dict(counts_2))
-        if curent_output != "Invlaid" and len(curent_output["exepts"]) == 0:
-            if curent_output["chi_square"] < .05:
-                num_reject += 1
+        if curent_output != "Invalid":
+            if len(curent_output["exepts"]) == 0:
+                if curent_output["chi_square"] < .05:
+                    num_reject += 1
+                else:
+                    num_fail += 1
             else:
-                num_fail += 1
-        else:
-            num_with_exeption +=1
+                num_with_exeption +=1
+        else: 
+            print("Invalid")
 
     #End
     print(f"Number of times H0 was rejected: {num_reject}\nNumber of times H0 was accepted: {num_fail}\nNum of exep: {num_with_exeption}")
-driver()
